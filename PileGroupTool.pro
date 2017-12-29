@@ -6,18 +6,20 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport network
 
-TARGET = QtPile
+TARGET = PileGroupTool
 TEMPLATE = app
+VERSION=1.0
 
 #M_VERSION = 1.0.
 #M_REV     = $Rev: $
 
-PRODUCT_NAME = 'QtPile'
+PRODUCT_NAME = 'PileGroupTool'
 
 #DEFINES += APPLICATION_NAME=\"\\\"$$PRODUCT_NAME\\\"\"
 #DEFINES += APPLICATION_VERSION=\"\\\"$$M_VERSION$$member(M_REV, 1)\\\"\"
+DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 #win32: INCLUDES += "./ops"
 #win32: LIBS += -llapack -lblas
@@ -38,8 +40,11 @@ SOURCES += main.cpp\
         surveysplashscreen.cpp \
         soilmat.cpp \
         utilWindows/copyrightdialog.cpp \
-    utilWindows/dialogabout.cpp \
-    utilWindows/dialogpreferences.cpp
+        utilWindows/dialogabout.cpp \
+        utilWindows/dialogpreferences.cpp \
+        utilWindows/dialogfuturefeature.cpp \
+    ../widgets/Common/FooterWidget.cpp \
+    ../widgets/Common/HeaderWidget.cpp
         
 HEADERS  += mainwindow.h \
         qcustomplot.h \
@@ -47,19 +52,21 @@ HEADERS  += mainwindow.h \
         surveysplashscreen.h \
         soilmat.h \
         utilWindows/copyrightdialog.h \
-    utilWindows/dialogabout.h \
-    utilWindows/dialogpreferences.h
+        utilWindows/dialogabout.h \
+        utilWindows/dialogpreferences.h \
+        utilWindows/dialogfuturefeature.h \
+    ../widgets/Common/FooterWidget.h \
+    ../widgets/Common/HeaderWidget.h
 
-# WHY DO WE NEED THIS ?????
-HEADERS  += ui_mainwindow.h
-        
 FORMS    += mainwindow.ui \
         materialdbinterface.ui \
         surveysplashscreen.ui \
         utilWindows/copyrightdialog.ui \
-    utilWindows/dialogabout.ui \
-    utilWindows/dialogpreferences.ui
-        
+        utilWindows/dialogabout.ui \
+        utilWindows/dialogpreferences.ui \
+        utilWindows/dialogfuturefeature.ui
 
 RESOURCES += \
     qtpileresources.qrc
+
+DISTFILES +=
