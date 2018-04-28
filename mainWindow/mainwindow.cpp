@@ -46,10 +46,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->fetchSettings();
 
-    if (useGraphicsLib == "Qwt")
+    if (useGraphicsLib == "QwtAll" || useGraphicsLib == "QwtSystem")
     {
         systemPlot  = new SystemPlotQwt(ui->systemTab);
+    }
+    else
+    {
+        systemPlot  = new SystemPlotQCP(ui->systemTab);
+    }
 
+    if (useGraphicsLib == "QwtAll" || useGraphicsLib == "QwtResults")
+    {
         displPlot   = new ResultPlotQwt(ui->dispTab);
         pullOutPlot = new ResultPlotQwt(ui->pulloutTab);
         momentPlot  = new ResultPlotQwt(ui->momentTab);
@@ -58,11 +65,11 @@ MainWindow::MainWindow(QWidget *parent) :
         stressPlot  = new ResultPlotQwt(ui->stressTab);
         pultPlot    = new ResultPlotQwt(ui->pultTab);
         y50Plot     = new ResultPlotQwt(ui->y50Tab);
+        tultPlot    = new ResultPlotQwt(ui->tultTab);
+        z50Plot     = new ResultPlotQwt(ui->z50Tab);
     }
     else
     {
-        systemPlot  = new SystemPlotQCP(ui->systemTab);
-
         displPlot   = new ResultPlotQCP(ui->dispTab);
         pullOutPlot = new ResultPlotQCP(ui->pulloutTab);
         momentPlot  = new ResultPlotQCP(ui->momentTab);
@@ -71,6 +78,8 @@ MainWindow::MainWindow(QWidget *parent) :
         stressPlot  = new ResultPlotQCP(ui->stressTab);
         pultPlot    = new ResultPlotQCP(ui->pultTab);
         y50Plot     = new ResultPlotQCP(ui->y50Tab);
+        tultPlot    = new ResultPlotQCP(ui->tultTab);
+        z50Plot     = new ResultPlotQCP(ui->z50Tab);
     }
 
     //
@@ -87,6 +96,8 @@ MainWindow::MainWindow(QWidget *parent) :
     lyt = ui->stressTab->layout();  lyt->addWidget(stressPlot);
     lyt = ui->pultTab->layout();    lyt->addWidget(pultPlot);
     lyt = ui->y50Tab->layout();     lyt->addWidget(y50Plot);
+    lyt = ui->tultTab->layout();    lyt->addWidget(tultPlot);
+    lyt = ui->z50Tab->layout();     lyt->addWidget(z50Plot);
 
     ui->tabWidget->setCurrentWidget(ui->dispTab);
 
@@ -113,10 +124,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     /* connect a FEA modeler */
     pileFEAmodel = new PileFEAmodeler();
+    loadControlType = LoadControlType::ForceControl;
+    pileFEAmodel->setLoadType(loadControlType);
 
     // setup data
     numPiles = 1;
-    P        = 1000.0;
+    P        = MAX_H_FORCE/10.;
     PV       =    0.0;
     PMom     =    0.0;
 
@@ -192,6 +205,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     manager->get(QNetworkRequest(QUrl("http://opensees.berkeley.edu/OpenSees/developer/qtPile/use.php")));
     //manager->get(QNetworkRequest(QUrl("https://simcenter.designsafe-ci.org/pile-group-analytics/")));
+
+    //this->on_forceTypeSelector_activated(0);
+    //this->on_horizontalForceSlider_valueChanged(10);
+    //this->on_forceTypeSelector_activated(0);
 }
 
 MainWindow::~MainWindow()
@@ -217,6 +234,10 @@ void MainWindow::refreshUI() {
     ui->appliedHorizontalForce->setValue(P);
     ui->appliedVerticalForce->setValue(PV);
     ui->appliedMoment->setValue(PMom);
+
+    this->on_appliedHorizontalForce_editingFinished();
+    this->on_appliedVerticalForce_editingFinished();
+    this->on_appliedMoment_editingFinished();
 
     int pileIdx = ui->pileIndex->value() - 1;
 
@@ -301,7 +322,8 @@ void MainWindow::doAnalysis(void)
     //
     // run the analysis
     //
-    pileFEAmodel->doAnalysis();
+    bool converged = pileFEAmodel->doAnalysis();
+    systemPlot->setSystemStable(converged);
 
     //
     // plot results
@@ -312,6 +334,28 @@ void MainWindow::doAnalysis(void)
 void MainWindow::updateResultPlots()
 {
     // this should call the results update from the analysis modeler and the plot methods
+
+    //
+    // send deformations to systemPlot
+    //
+
+    QList<QVector<QVector<double> *> *> list;
+    list = pileFEAmodel->getLateralDisplacements();
+    if (list.size() >= 2)
+    {
+        QVector<QVector<double> *> &pos   = *list[0];
+        QVector<QVector<double> *> &dispU = *list[1];
+        list = pileFEAmodel->getAxialDisplacements();
+        QVector<QVector<double> *> &dispV = *list[1];
+
+        this->systemPlot->updatePileDeformation(pos, dispU, dispV);
+    }
+    else
+    {
+        QVector<QVector<double> *> dummy;
+        this->systemPlot->updatePileDeformation(dummy, dummy, dummy);
+    }
+
 
     //
     // plot results
@@ -372,6 +416,20 @@ void MainWindow::updateResultPlots()
         if (list.size() >= 2)
             y50Plot->plotResults(*list[0], *list[1]);
     }
+
+    // t_ultimate
+    if (showTultimate) {
+        QList<QVector<QVector<double> *> *> list = pileFEAmodel->getTult();
+        if (list.size() >= 2)
+            tultPlot->plotResults(*list[0], *list[1]);
+    }
+
+    // z_50
+    if (showZ50) {
+        QList<QVector<QVector<double> *> *> list = pileFEAmodel->getZ50();
+        if (list.size() >= 2)
+            z50Plot->plotResults(*list[0], *list[1]);
+    }
 }
 
 void MainWindow::fetchSettings()
@@ -382,6 +440,7 @@ void MainWindow::fetchSettings()
     // general settings
     settings->beginGroup("general");
         useGraphicsLib    = settings->value("graphicsLibrary", QString("QCP")).toString();
+        if (useGraphicsLib == "Qwt") { useGraphicsLib = "QwtAll"; }
         useFEAnalyzer     = settings->value("femAnalyzer", QString("OpenSeesInt")).toString();
     settings->endGroup();
 
@@ -395,6 +454,8 @@ void MainWindow::fetchSettings()
         showStress        = settings->value("stress",1).toBool();
         showPultimate     = settings->value("pult",1).toBool();
         showY50           = settings->value("compliance",1).toBool();
+        showTultimate     = settings->value("tult",1).toBool();
+        showZ50           = settings->value("Zcompliance",1).toBool();
     settings->endGroup();
 
     // meshing parameters
@@ -439,7 +500,7 @@ void MainWindow::setupLayers()
     mSoilLayers.clear();
     mSoilLayers.push_back(soilLayer("Layer 1", 3.0, 15.0, 18.0, 2.0e5, 30, 0.0, QColor(100,0,0,100)));
     mSoilLayers.push_back(soilLayer("Layer 2", 3.0, 16.0, 19.0, 2.0e5, 35, 0.0, QColor(0,100,0,100)));
-    mSoilLayers.push_back(soilLayer("Layer 3", 4.0, 14.0, 17.0, 2.0e5, 28, 0.0, QColor(0,0,100,100)));
+    mSoilLayers.push_back(soilLayer("Layer 3",14.0, 14.0, 17.0, 2.0e5, 28, 0.0, QColor(0,0,100,100)));
 
     updateLayerState();
 }
@@ -486,6 +547,12 @@ void MainWindow::updateUI()
     if (!showY50 && ui->tabWidget->indexOf(ui->y50Tab)>=0 ) {
         ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->y50Tab));
     }
+    if (!showTultimate && ui->tabWidget->indexOf(ui->tultTab)>=0 ) {
+        ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tultTab));
+    }
+    if (!showZ50 && ui->tabWidget->indexOf(ui->z50Tab)>=0 ) {
+        ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->z50Tab));
+    }
 
     int numTabs = ui->tabWidget->count();
 
@@ -512,6 +579,12 @@ void MainWindow::updateUI()
     }
     if (showY50 && ui->tabWidget->indexOf(ui->y50Tab) < 0) {
         ui->tabWidget->addTab(ui->y50Tab,"y50");
+    }
+    if (showTultimate && ui->tabWidget->indexOf(ui->tultTab) < 0 ) {
+        ui->tabWidget->addTab(ui->tultTab,"t_ult");
+    }
+    if (showZ50 && ui->tabWidget->indexOf(ui->z50Tab) < 0) {
+        ui->tabWidget->addTab(ui->z50Tab,"z50");
     }
 }
 
@@ -1140,6 +1213,8 @@ bool MainWindow::ReadFile(QString s)
     fileTypeError = true;
     if (version == "1.0")   fileTypeError = false;
     if (version == "1.99")  fileTypeError = false;
+    if (version == "1.99.1")  fileTypeError = false;
+    if (version == "1.99.2")  fileTypeError = false;
     if (version == "2.0")   fileTypeError = false;
 
     if (fileTypeError) {
@@ -1447,6 +1522,7 @@ void MainWindow::on_forceTypeSelector_activated(int index)
 
     systemPlot->setLoadType(loadControlType);
     pileFEAmodel->setLoadType(loadControlType);
+    this->doAnalysis();
 }
 
 
