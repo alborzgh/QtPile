@@ -24,7 +24,7 @@ class MainWindow : public QMainWindow
 {
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(bool graphicsModeQCP = false, QWidget *parent = 0);
     ~MainWindow();
 
     void doAnalysis(void);
@@ -35,6 +35,10 @@ public:
     int  findActiveLayer();
     int  adjustLayersToPiles();
     void updateResultPlots();
+    void updateSoilResultPlots(QVector<double> &);
+    void refreshResultPlots();
+
+
 
 private slots:
     //
@@ -52,10 +56,10 @@ private slots:
 
     void on_actionLicense_Information_triggered();
     void on_actionLicense_triggered();
-    void on_actionVersion_triggered();
     void on_actionProvide_Feedback_triggered();
 
     void on_action_About_triggered();
+    void on_actionQuick_Tips_triggered();
     void on_actionPreferences_triggered();
 
     // check boxes
@@ -75,13 +79,18 @@ private slots:
     void on_btn_newPile_clicked();
 
     // material table slots
-    void on_horizontalForceSlider_valueChanged(int value);
-    void on_verticalForceSlider_valueChanged(int value);
-    void on_momentSlider_valueChanged(int value);
 
-    void on_appliedHorizontalForce_editingFinished();
-    void on_appliedVerticalForce_editingFinished();
-    void on_appliedMoment_editingFinished();
+    void on_HForceCtrl_valueChanged(int value);
+    //void on_horizontalForceSlider_valueChanged(int value);      // depricated
+    //void on_appliedHorizontalForce_valueChanged(double arg1);   // depricated
+
+    void on_VForceCtrl_valueChanged(int value);
+    //void on_verticalForceSlider_valueChanged(int value);        // depricated
+    //void on_appliedVerticalForce_editingFinished();             // depricated
+
+    void on_MomentCtrl_valueChanged(int value);
+    //void on_momentSlider_valueChanged(int value);               // depricated
+    //void on_appliedMoment_editingFinished();                    // depricated
 
     // layer selection slots
     void on_chkBox_layer1_clicked();
@@ -102,18 +111,26 @@ private slots:
     void replyFinished(QNetworkReply*);
 
     void on_forceTypeSelector_activated(int index);
-    void on_pushoverDisplacement_editingFinished();
-    void on_pulloutDisplacement_editingFinished();
-    void on_pushoverDisplacementSlider_valueChanged(int value);
-    void on_pulloutDisplacementSlider_valueChanged(int value);
-    void on_surfaceDisplacement_editingFinished();
-    void on_surfaceDisplacementSlider_valueChanged(int value);
-    void on_Interface12_editingFinished();
-    void on_Interface12Slider_valueChanged(int value);
-    void on_Interface23_editingFinished();
-    void on_Interface23Slider_valueChanged(int value);
-    void on_BaseDisplacement_editingFinished();
-    void on_BaseDisplacementSlider_valueChanged(int value);
+
+    void on_PushOverCtrl_valueChanged(int value);
+    void on_PullOutCtrl_valueChanged(int value);
+    //void on_pushoverDisplacement_editingFinished();             // depricated
+    //void on_pulloutDisplacement_editingFinished();              // depricated
+    //void on_pushoverDisplacementSlider_valueChanged(int value); // depricated
+    //void on_pulloutDisplacementSlider_valueChanged(int value);  // depricated
+
+    void on_SurfaceDisplacementCtrl_valueChanged(int value);
+    void on_Interface12Ctrl_valueChanged(int value);
+    void on_Interface23Ctrl_valueChanged(int value);
+    void on_BaseDisplacementCtrl_valueChanged(int value);
+    //void on_surfaceDisplacement_editingFinished();              // depricated
+    //void on_surfaceDisplacementSlider_valueChanged(int value);  // depricated
+    //void on_Interface12_editingFinished();                      // depricated
+    //void on_Interface12Slider_valueChanged(int value);          // depricated
+    //void on_Interface23_editingFinished();                      // depricated
+    //void on_Interface23Slider_valueChanged(int value);          // depricated
+    //void on_BaseDisplacement_editingFinished();                 // depricated
+    //void on_BaseDisplacementSlider_valueChanged(int value);     // depricated
 
     // response to signals from systemPlot
     void onSystemPlot_pileSelected(int );
@@ -124,8 +141,8 @@ private:
     Q_OBJECT
     Ui::MainWindow *ui;
 
-    SystemPlotSuper *systemPlot = NULL;
-    PileFEAmodeler *pileFEAmodel = NULL;
+    SystemPlotSuper *systemPlot = nullptr;
+    PileFEAmodeler *pileFEAmodel = nullptr;
 
     void updateSystemPlot();
     void refreshUI();
@@ -183,7 +200,7 @@ private:
     bool inSetupState = true;
 
     // system conforming settings and parameters
-    QSettings *settings = NULL;
+    QSettings *settings = nullptr;
 
     // general settings
     QString useGraphicsLib;  // "QCP" or "QwtAll" or "QwtSystem" or "QwtResults"

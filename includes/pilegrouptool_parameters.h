@@ -13,11 +13,16 @@
 #define MAX_ELEMENTS_PER_LAYER   40
 #define NUM_ELEMENTS_IN_AIR       4
 
-// #define MAX_FORCE 5000.0
-#define MAX_H_FORCE  1000.0
-#define MAX_V_FORCE 10000.0
-#define MAX_MOMENT 2500.0
-#define MAX_DISP   1.0
+/*
+ *  force limits are given as integers to work with the sliders.
+ *  They are converted to floats when generating the FEA model.
+ */
+
+// #define MAX_FORCE 5000
+#define MAX_H_FORCE  1000
+#define MAX_V_FORCE 10000
+#define MAX_MOMENT 2500
+#define MAX_DISP   1
 
 // global constants
 #define GAMMA_WATER 9.81
@@ -34,6 +39,13 @@ typedef struct {
     double reductionFactorRightMovement;
 } HEAD_NODE_TYPE;
 
+typedef struct {
+    int    pileIdx;
+    int    nodeIdx;
+    double x;
+    double z;
+} CAP_NODE_TYPE;
+
 struct PILE_INFO {
     double L1;            // pile length above ground (all the same)
     double L2;            // embedded length of pile
@@ -47,6 +59,10 @@ struct PILE_FEA_INFO : PILE_INFO {
     int maxLayers;
     int nodeIDoffset;
     int elemIDoffset;
+    int firstNodeTag;
+    int lastNodeTag;
+    int firstElementTag;
+    int lastElementTag;
 };
 
 #define SWAP(X,Y) {HEAD_NODE_TYPE tmp=Y; Y=X, Y=tmp; }
@@ -64,7 +80,13 @@ static QVector<QColor> BRUSH_COLOR({
                                        QColor( 63, 127, 255, 255),
                                        QColor(127, 255, 255, 127),
                                        QColor( 95, 191, 255, 127),
-                                       QColor( 63, 127, 255, 127)
+                                       QColor( 63, 127, 255, 127),
+                                       QColor(255, 127, 0, 63),
+                                       QColor(191,  95, 0, 63),
+                                       QColor(127,  63, 0, 63),
+                                       QColor(127, 255, 0, 63),
+                                       QColor( 95, 191, 0, 63),
+                                       QColor( 63, 127, 0, 63)
                                     });
 #define GROUND_WATER_BLUE QColor(127,127,255,192)
 

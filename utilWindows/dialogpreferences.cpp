@@ -3,6 +3,7 @@
 
 #include <QSettings>
 #include <QApplication>
+#include <QTabBar>
 
 #include <qdebug.h>
 
@@ -11,12 +12,13 @@ DialogPreferences::DialogPreferences(QWidget *parent, QSettings *settings) :
     ui(new Ui::DialogPreferences)
 {
     ui->setupUi(this);
+    ui->tabWidget->tabBar()->setTabEnabled(2,false);
 
     //
     // initialize the setup file
     //
 
-    if (settings != NULL) {
+    if (settings != nullptr) {
         DLGsettings = settings;
     }
     else {
@@ -26,8 +28,8 @@ DialogPreferences::DialogPreferences(QWidget *parent, QSettings *settings) :
     qDebug() << DLGsettings->fileName();
 
     DLGsettings->beginGroup("general");
-        DLGgraphicsLib       = DLGsettings->value("graphicsLibrary","QCP").toString();
-        //if (DLGgraphicsLib == "Qwt") { DLGgraphicsLib="QwtSystem"; }
+        DLGgraphicsLib       = DLGsettings->value("graphicsLibrary","QwtAll").toString();
+        if (DLGgraphicsLib == "QCP") { DLGgraphicsLib="QwtAll"; }
         if (DLGgraphicsLib == "Qwt") { DLGgraphicsLib="QwtAll"; }
         DLGfemAnalyzer       = DLGsettings->value("femAnalyzer","OpenSeesInt").toString();
     DLGsettings->endGroup();
@@ -67,10 +69,10 @@ DialogPreferences::~DialogPreferences()
 
 void DialogPreferences::InitGUI()
 {
-    if (DLGgraphicsLib == "QwtSystem" || DLGgraphicsLib == "QwtAll" || DLGgraphicsLib == "QwtResults" || DLGgraphicsLib == "Qwt")
-        { ui->rbtn_useQwt->setChecked(true); }
+    if (DLGgraphicsLib == "QCP" )
+        { ui->rbtn_useQCP->setChecked(true); }
     else
-        { ui->rbtn_useQCP->setChecked(true); }  // default to QCP
+        { ui->rbtn_useQwt->setChecked(true); }  // default to Qwt
 
     if (DLGfemAnalyzer == "OpenSeesInt") { ui->rbtn_OpenSeesInt->setChecked(true); }
     if (DLGfemAnalyzer == "OpenSeesExt") { ui->rbtn_OpenSeesExt->setChecked(true); }
@@ -98,7 +100,6 @@ void DialogPreferences::on_buttonBox_clicked(QAbstractButton *button)
 
     DLGsettings->beginGroup("general");
         if (ui->rbtn_useQCP->isChecked()) {DLGgraphicsLib = QString("QCP");}
-        //if (ui->rbtn_useQwt->isChecked()) {DLGgraphicsLib = QString("QwtSystem");}
         if (ui->rbtn_useQwt->isChecked()) {DLGgraphicsLib = QString("QwtAll");}
 
         if (ui->rbtn_OpenSeesInt->isChecked()) {DLGfemAnalyzer = QString("OpenSeesInt");}
